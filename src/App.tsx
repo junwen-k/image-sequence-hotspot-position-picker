@@ -1,3 +1,5 @@
+import '@fontsource/nunito-sans';
+
 import Highlight, { defaultProps } from 'prism-react-renderer';
 import React, { useCallback, useState } from 'react';
 import { useBeforeunload } from 'react-beforeunload';
@@ -6,24 +8,24 @@ import { v4 as uuidv4 } from 'uuid';
 
 import {
   Add as AddIcon,
+  Brightness4 as Brightness4Icon,
+  Brightness7 as Brightness7Icon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   Code as CodeIcon,
   Delete as DeleteIcon,
-  FileUpload as FileUploadIcon,
   GitHub as GitHubIcon,
-  Image as ImageIcon,
+  ImageOutlined as ImageOutlinedIcon,
 } from '@mui/icons-material';
 import {
   Alert,
-  AppBar,
+  AppBar as MuiAppBar,
   Button,
   Card,
   CardActionArea,
   CardContent,
   CardMedia,
   Container,
-  createTheme,
   CssBaseline,
   Dialog,
   DialogActions,
@@ -32,46 +34,33 @@ import {
   Divider,
   Grid,
   IconButton,
+  IconButtonProps,
   InputBase,
   InputLabel,
+  Link,
   Paper,
   Snackbar,
   Stack,
   Switch,
+  SwitchProps,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  ThemeProvider,
   Toolbar,
   Tooltip,
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { styled, Theme } from '@mui/material/styles';
 import { Box } from '@mui/system';
 
-import { Marker } from './components';
+import { Hotspot, ImageDropzoneUploader } from './components';
+import { ColorThemeProvider, useColorModeContext } from './contexts';
 
-const StandardImg = styled('img')({
-  maxWidth: '100%',
-});
-
-const PreviewImg = styled(StandardImg)({
-  cursor: 'crosshair',
-});
-
-const Pre = styled('pre')(({ theme }) => ({
-  fontSize: theme.typography.pxToRem(10),
-  margin: 0,
-  padding: theme.spacing(2),
-}));
-
-const PositionInput = styled(InputBase)({
-  width: '100%',
-});
+const HOTSPOT_SIZE = 6;
 
 interface Image {
   id: string;
@@ -84,24 +73,360 @@ interface Position {
   top: number;
 }
 
-const theme = createTheme({
-  palette: {
-    primary: { main: '#007FFF' },
-    secondary: { main: '#9c27b0' },
-  },
+type Positions = Record<string, Position>;
+
+const AppBar = () => {
+  const { mode, toggleColorMode } = useColorModeContext();
+  return (
+    <MuiAppBar>
+      <Toolbar sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="subtitle1">
+          Image Sequence Hotspot Position Picker
+        </Typography>
+        <Stack spacing={1} direction="row">
+          <Tooltip title={`Turn ${mode === 'light' ? 'off' : 'on'} the light`}>
+            <IconButton color="inherit" onClick={toggleColorMode}>
+              {mode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="GitHub repository">
+            <IconButton
+              color="inherit"
+              href={process.env.REACT_APP_GITHUB_REPOSITORY_URL as string}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              <GitHubIcon />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Toolbar>
+    </MuiAppBar>
+  );
+};
+
+interface PositionTableProps {
+  activeImageID?: string;
+  positions: Positions;
+  onCodeOpen: IconButtonProps['onClick'];
+  onDeleteAll: IconButtonProps['onClick'];
+  onSwitchChange: SwitchProps['onChange'];
+  onInputChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    imageID: string
+  ) => void;
+  onDelete: (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    imageID: string
+  ) => void;
+}
+
+const PositionTable = ({
+  activeImageID,
+  positions,
+  onCodeOpen,
+  onDeleteAll,
+  onSwitchChange,
+  onInputChange,
+  onDelete,
+}: PositionTableProps) => {
+  const isTabletBelow = useMediaQuery((theme: Theme) =>
+    theme.breakpoints.down('md')
+  );
+
+  return (
+    <TableContainer
+      component="aside"
+      sx={{
+        ...(isTabletBelow
+          ? {
+              borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+            }
+          : {
+              borderLeft: (theme) => `1px solid ${theme.palette.divider}`,
+            }),
+        height: '100%',
+        maxHeight: !isTabletBelow ? 750 : undefined,
+      }}
+    >
+      <Table stickyHeader size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>
+              <Tooltip title="JSON">
+                <IconButton onClick={onCodeOpen}>
+                  <CodeIcon />
+                </IconButton>
+              </Tooltip>
+            </TableCell>
+            <TableCell align="right">
+              <InputLabel>Left (%)</InputLabel>
+            </TableCell>
+            <TableCell align="right">
+              <InputLabel>Top (%)</InputLabel>
+            </TableCell>
+            <TableCell>
+              <Tooltip title="Delete All">
+                <IconButton onClick={onDeleteAll}>
+                  <DeleteIcon />
+                </IconButton>
+              </Tooltip>
+            </TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {Object.entries(positions).map(([imageID, position]) => (
+            <TableRow key={imageID} hover>
+              <TableCell>
+                <Switch
+                  value={imageID}
+                  checked={activeImageID === imageID}
+                  onChange={onSwitchChange}
+                />
+              </TableCell>
+              <TableCell align="right">
+                <InputBase
+                  fullWidth
+                  inputProps={{
+                    min: 0,
+                    max: 100,
+                    step: 0.01,
+                    style: { textAlign: 'right' },
+                  }}
+                  name="left"
+                  type="number"
+                  placeholder="0.00"
+                  onChange={(e) => onInputChange(e, imageID)}
+                  value={position.left ?? 0}
+                />
+              </TableCell>
+              <TableCell align="right">
+                <InputBase
+                  fullWidth
+                  inputProps={{
+                    min: 0,
+                    max: 100,
+                    step: 0.01,
+                    style: { textAlign: 'right' },
+                  }}
+                  name="top"
+                  type="number"
+                  placeholder="0.00"
+                  onChange={(e) => onInputChange(e, imageID)}
+                  value={position.top ?? 0}
+                />
+              </TableCell>
+              <TableCell>
+                <Tooltip title="Delete">
+                  <IconButton onClick={(e) => onDelete(e, imageID)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
+
+interface DeleteAllDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+const DeleteAllDialog = ({
+  open,
+  onClose,
+  onConfirm,
+}: DeleteAllDialogProps) => (
+  <Dialog fullWidth onClose={onClose} open={open}>
+    <DialogTitle>Delete All</DialogTitle>
+    <DialogContent dividers>
+      <Typography>Are you sure you want to delete all images?</Typography>
+      <Typography variant="caption" color="text.secondary">
+        *You cannot undo this action
+      </Typography>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={onClose} color="primary">
+        Cancel
+      </Button>
+      <Button onClick={onConfirm} color="primary">
+        Confirm
+      </Button>
+    </DialogActions>
+  </Dialog>
+);
+
+interface CopySnackbarProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+const CopySnackbar = ({ open, onClose }: CopySnackbarProps) => (
+  <Snackbar
+    autoHideDuration={6000}
+    open={open}
+    onClose={(e, reason) => reason !== 'clickaway' && onClose()}
+  >
+    <Alert onClose={onClose}>Successfully copied to clipboard</Alert>
+  </Snackbar>
+);
+
+interface ContentSectionProps {
+  title: string;
+}
+
+const ContentSection = ({
+  children,
+  title,
+}: React.PropsWithChildren<ContentSectionProps>) => (
+  <Box component="section" my={4}>
+    <Typography gutterBottom variant="h5" sx={{ fontWeight: 'bold' }}>
+      {title}
+    </Typography>
+    {children}
+  </Box>
+);
+
+const Footer = () => (
+  <Box component="footer" textAlign="center" p={2}>
+    <Typography variant="caption" color="text.secondary">
+      v{process.env.REACT_APP_VERSION}
+    </Typography>
+  </Box>
+);
+
+const ImageCanvasPreviewImg = styled('img')({
+  maxWidth: '100%',
+  cursor: 'crosshair',
 });
 
-const MARKER_SIZE = 6;
+const ImageCanvasWrapper = styled('div')({
+  display: 'flex',
+  position: 'relative',
+});
+
+const ImageCanvasCaptionWrapper = styled('div')(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding: theme.spacing(1),
+}));
+
+const EmptyImageCanvasRoot = styled('div')(({ theme }) => ({
+  padding: theme.spacing(2),
+  minHeight: 400,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}));
+
+const EmptyImageCanvas = () => (
+  <EmptyImageCanvasRoot>
+    <Box textAlign="center">
+      <ImageOutlinedIcon color="action" fontSize="large" />
+      <Typography gutterBottom color="text.secondary" variant="subtitle2">
+        Select an image from the carousel below to begin
+      </Typography>
+    </Box>
+  </EmptyImageCanvasRoot>
+);
+
+interface ImageStackProps {
+  activeImageID?: string;
+  images: Image[];
+  inputProps: React.DetailedHTMLProps<
+    React.InputHTMLAttributes<HTMLInputElement>,
+    HTMLInputElement
+  >;
+  onChange: (imageID: string) => void;
+}
+
+const ImageStack = ({
+  activeImageID,
+  images,
+  inputProps,
+  onChange,
+}: ImageStackProps) => {
+  const isTabletBelow = useMediaQuery((theme: Theme) =>
+    theme.breakpoints.down('md')
+  );
+
+  return (
+    <Stack spacing={2} direction="row" sx={{ p: 2, overflow: 'auto' }}>
+      {images.map((image) => (
+        <Card
+          variant="outlined"
+          key={image.id}
+          title={image.file.name}
+          sx={{
+            flex: `0 0 ${isTabletBelow ? 33.34 : 16.67}%`,
+            ...(activeImageID === image.id && {
+              border: (theme) => `1px solid ${theme.palette.primary.main}`,
+            }),
+          }}
+        >
+          <CardActionArea onClick={() => onChange(image.id)}>
+            <CardMedia
+              component="img"
+              image={image.imgSrc}
+              alt={image.file.name}
+            />
+            <CardContent
+              sx={{
+                textAlign: 'center',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                {image.file.name}
+              </Typography>
+            </CardContent>
+          </CardActionArea>
+        </Card>
+      ))}
+      <Card
+        variant="outlined"
+        title="Add"
+        sx={{ flex: `0 0 ${isTabletBelow ? 33.34 : 16.67}%` }}
+      >
+        <CardActionArea
+          component="label"
+          sx={{ display: 'flex', alignItems: 'center', height: '100%' }}
+        >
+          <input type="file" hidden {...inputProps} />
+          <AddIcon fontSize="large" color="action" />
+        </CardActionArea>
+      </Card>
+    </Stack>
+  );
+};
+
+const CodeDialogPre = styled('pre')(({ theme }) => ({
+  fontSize: theme.typography.pxToRem(10),
+  margin: 0,
+  padding: theme.spacing(2),
+}));
 
 function App() {
   const [images, setImages] = useState<Image[]>([]);
-  const [positions, setPositions] = useState<Record<string, Position>>({});
+  const [positions, setPositions] = useState<Positions>({});
   const [activeImageID, setActiveImageID] = useState<string | undefined>();
 
-  const [open, setOpen] = useState(false);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [open, setOpen] = useState({
+    codeDialog: false,
+    copySnackbar: false,
+    deleteDialog: false,
+  });
 
-  const isTabletBelow = useMediaQuery(theme.breakpoints.down('md'));
+  const updateOpen = (name: keyof typeof open, newOpen: boolean) =>
+    setOpen((prevOpen) => ({ ...prevOpen, [name]: newOpen }));
 
   useBeforeunload((e) => {
     if (images.length) {
@@ -109,7 +434,7 @@ function App() {
     }
   });
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onImagesUpload = useCallback((acceptedFiles: File[]) => {
     const images = acceptedFiles.map((file) => ({
       id: uuidv4(),
       file,
@@ -130,9 +455,15 @@ function App() {
     setPositions((prevPositions) => ({ ...prevPositions, ...positions }));
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const {
+    open: openUpload,
+    getRootProps,
+    getInputProps,
+    isDragActive,
+  } = useDropzone({
     accept: 'image/*',
-    onDrop,
+    onDrop: onImagesUpload,
+    noClick: true,
   });
 
   const handlePlotHotspot = (
@@ -140,8 +471,8 @@ function App() {
     image: Image
   ) => {
     const rect = (e.target as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - MARKER_SIZE - rect.left;
-    const y = e.clientY - MARKER_SIZE - rect.top;
+    const x = e.clientX - HOTSPOT_SIZE - rect.left;
+    const y = e.clientY - HOTSPOT_SIZE - rect.top;
     const left = +((x / rect.width) * 100).toFixed(2);
     const top = +((y / rect.height) * 100).toFixed(2);
     setPositions((prevPositions) => ({
@@ -203,123 +534,13 @@ function App() {
   const isPositionSet = (imageID: string) =>
     positions[imageID] && positions[imageID].left && positions[imageID].top;
 
-  const renderImageUploader = () => (
-    <Box p={2} {...getRootProps()}>
-      <input {...getInputProps()} />
-      <Box
-        sx={{
-          border: (theme) => `1px dotted ${theme.palette.primary.main}`,
-          minHeight: 400,
-          justifyContent: 'center',
-          alignItems: 'center',
-          display: 'flex',
-        }}
-      >
-        {isDragActive ? (
-          <AddIcon color="primary" fontSize="large" />
-        ) : (
-          <FileUploadIcon color="primary" fontSize="large" />
-        )}
-      </Box>
-    </Box>
-  );
-
-  const renderPositionTable = () => (
-    <TableContainer
-      component="aside"
-      sx={{
-        borderLeft: (theme) => `1px solid ${theme.palette.divider}`,
-        height: '100%',
-        maxHeight: !isTabletBelow ? 750 : undefined,
-      }}
-    >
-      <Table stickyHeader size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>
-              <Tooltip title="JSON">
-                <IconButton onClick={() => setOpen((prevOpen) => !prevOpen)}>
-                  <CodeIcon />
-                </IconButton>
-              </Tooltip>
-            </TableCell>
-            <TableCell align="right">
-              <InputLabel>Left (%)</InputLabel>
-            </TableCell>
-            <TableCell align="right">
-              <InputLabel>Top (%)</InputLabel>
-            </TableCell>
-            <TableCell></TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {Object.entries(positions).map(([imageID, position]) => (
-            <TableRow key={imageID} hover>
-              <TableCell>
-                <Switch
-                  value={imageID}
-                  checked={activeImageID === imageID}
-                  onChange={(e) => setActiveImageID(e.target.value)}
-                />
-              </TableCell>
-              <TableCell align="right">
-                <PositionInput
-                  inputProps={{
-                    min: 0,
-                    max: 100,
-                    step: 0.1,
-                    style: { textAlign: 'right' },
-                  }}
-                  name="left"
-                  type="number"
-                  placeholder="0.00"
-                  onChange={(e) => handleInputChange(e, imageID)}
-                  value={position.left ?? 0}
-                />
-              </TableCell>
-              <TableCell align="right">
-                <PositionInput
-                  inputProps={{
-                    min: 0,
-                    max: 100,
-                    step: 0.1,
-                    style: { textAlign: 'right' },
-                  }}
-                  name="top"
-                  type="number"
-                  placeholder="0.00"
-                  onChange={(e) => handleInputChange(e, imageID)}
-                  value={position.top ?? 0}
-                />
-              </TableCell>
-              <TableCell>
-                <Tooltip title="Delete">
-                  <IconButton onClick={() => handleDeleteImage(imageID)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </Tooltip>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
-
-  const renderCopySnackbar = () => (
-    <Snackbar
-      autoHideDuration={6000}
-      open={snackbarOpen}
-      onClose={(e, reason) => reason !== 'clickaway' && setSnackbarOpen(false)}
-    >
-      <Alert onClose={() => setSnackbarOpen(false)}>
-        Successfully copied to clipboard
-      </Alert>
-    </Snackbar>
-  );
-
   const renderCodeDialog = () => (
-    <Dialog scroll="paper" fullWidth onClose={() => setOpen(false)} open={open}>
+    <Dialog
+      scroll="paper"
+      fullWidth
+      onClose={() => updateOpen('codeDialog', false)}
+      open={open.codeDialog}
+    >
       <DialogTitle>JSON</DialogTitle>
       <DialogContent sx={{ p: 0 }}>
         <Highlight
@@ -328,7 +549,7 @@ function App() {
           language="json"
         >
           {({ className, style, tokens, getLineProps, getTokenProps }) => (
-            <Pre className={className} style={style}>
+            <CodeDialogPre className={className} style={style}>
               {tokens.map((line, i) => (
                 <div {...getLineProps({ line, key: i })}>
                   {line.map((token, key) => (
@@ -336,7 +557,7 @@ function App() {
                   ))}
                 </div>
               ))}
-            </Pre>
+            </CodeDialogPre>
           )}
         </Highlight>
       </DialogContent>
@@ -346,86 +567,39 @@ function App() {
             window.navigator.clipboard.writeText(
               JSON.stringify(Object.values(positions), null, 2)
             );
-            setSnackbarOpen(true);
+            updateOpen('copySnackbar', true);
           }}
           color="primary"
         >
           Copy
         </Button>
-        <Button onClick={() => setOpen(false)} color="primary">
+        <Button onClick={() => updateOpen('codeDialog', false)} color="primary">
           Close
         </Button>
       </DialogActions>
     </Dialog>
   );
 
-  const renderImageStack = () => (
-    <Stack spacing={2} direction="row" sx={{ p: 2, overflow: 'auto' }}>
-      {images.map((image) => (
-        <Card
-          variant="outlined"
-          key={image.id}
-          title={image.file.name}
-          sx={{
-            flex: '0 0 16.67%',
-            ...(activeImageID === image.id && {
-              border: (theme) => `1px solid ${theme.palette.primary.main}`,
-            }),
-          }}
-        >
-          <CardActionArea onClick={() => setActiveImageID(image.id)}>
-            <CardMedia
-              component="img"
-              image={image.imgSrc}
-              alt={image.file.name}
-            />
-            <CardContent
-              sx={{
-                textAlign: 'center',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              <Typography variant="caption" color="text.secondary">
-                {image.file.name}
-              </Typography>
-            </CardContent>
-          </CardActionArea>
-        </Card>
-      ))}
-      <Card variant="outlined" title="Add" sx={{ flex: '0 0 16.67%' }}>
-        <CardActionArea
-          component="label"
-          sx={{ display: 'flex', alignItems: 'center', height: '100%' }}
-        >
-          <input {...getInputProps()} />
-          <AddIcon fontSize="large" color="action" />
-        </CardActionArea>
-      </Card>
-    </Stack>
-  );
-
   const renderImageCanvas = (image: Image) => (
     <>
-      <Box display="flex" position="relative">
-        <PreviewImg
+      <ImageCanvasWrapper>
+        <ImageCanvasPreviewImg
           alt={image.file.name}
           onMouseDown={(e) => handlePlotHotspot(e, image)}
           src={image.imgSrc}
         />
         {isPositionSet(image.id) && (
           <Tooltip title={JSON.stringify(positions[image.id])}>
-            <Marker
-              size={MARKER_SIZE}
+            <Hotspot
+              size={HOTSPOT_SIZE}
               left={positions[image.id].left}
               top={positions[image.id].top}
             />
           </Tooltip>
         )}
-      </Box>
+      </ImageCanvasWrapper>
       <Divider />
-      <Box display="flex" justifyContent="center" alignItems="center" p={1}>
+      <ImageCanvasCaptionWrapper>
         <Tooltip title="Previous">
           <span>
             <IconButton disabled={isFirstImage} onClick={handlePreviousImage}>
@@ -443,7 +617,7 @@ function App() {
             </IconButton>
           </span>
         </Tooltip>
-      </Box>
+      </ImageCanvasCaptionWrapper>
     </>
   );
 
@@ -458,68 +632,86 @@ function App() {
 
   return (
     <main>
-      <ThemeProvider theme={theme}>
+      <ColorThemeProvider>
         <CssBaseline enableColorScheme />
-        <AppBar>
-          <Toolbar
-            sx={{ justifyContent: 'space-between', alignItems: 'center' }}
-          >
-            <Typography variant="subtitle1">
-              Image Sequence Position Picker
-            </Typography>
-            <div>
-              <Tooltip title="GitHub repository">
-                <IconButton
-                  color="inherit"
-                  href={process.env.REACT_APP_GITHUB_REPOSITORY_URL as string}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  sx={{ mr: 1 }}
-                >
-                  <GitHubIcon />
-                </IconButton>
-              </Tooltip>
-              <Typography variant="caption" color="inherit">
-                v{process.env.REACT_APP_VERSION}
-              </Typography>
-            </div>
-          </Toolbar>
-        </AppBar>
+        <AppBar />
         <Toolbar />
+        <DeleteAllDialog
+          open={open.deleteDialog}
+          onClose={() => updateOpen('deleteDialog', false)}
+          onConfirm={() => {
+            updateOpen('deleteDialog', false);
+            setImages([]);
+            setPositions({});
+          }}
+        />
         {renderCodeDialog()}
-        {renderCopySnackbar()}
+        <CopySnackbar
+          open={open.copySnackbar}
+          onClose={() => updateOpen('copySnackbar', false)}
+        />
         <Container>
-          <Paper sx={{ my: 4 }}>
+          <Paper variant="outlined" sx={{ my: 4 }}>
             {!images.length ? (
-              renderImageUploader()
+              <ImageDropzoneUploader
+                {...getRootProps()}
+                active={isDragActive}
+                inputProps={getInputProps()}
+                onOpen={openUpload}
+              />
             ) : (
               <Grid container>
                 <Grid item xs={12} md={8}>
                   {activeImage ? (
                     renderImageCanvas(activeImage)
                   ) : (
-                    <Box
-                      p={2}
-                      minHeight={300}
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <ImageIcon color="action" fontSize="large" />
-                    </Box>
+                    <EmptyImageCanvas />
                   )}
                   <Divider />
-                  {renderImageStack()}
-                  <Divider />
+                  <ImageStack
+                    activeImageID={activeImageID}
+                    images={images}
+                    inputProps={getInputProps()}
+                    onChange={(imageID) => setActiveImageID(imageID)}
+                  />
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  {renderPositionTable()}
+                  <PositionTable
+                    activeImageID={activeImageID}
+                    positions={positions}
+                    onCodeOpen={() => updateOpen('codeDialog', true)}
+                    onDeleteAll={() => updateOpen('deleteDialog', true)}
+                    onSwitchChange={(e) => setActiveImageID(e.target.value)}
+                    onInputChange={handleInputChange}
+                    onDelete={(e, imageID) => handleDeleteImage(imageID)}
+                  />
                 </Grid>
               </Grid>
             )}
           </Paper>
+          <ContentSection title="About">
+            <Typography variant="subtitle1">
+              This little tool is built to ease the process of marking
+              "hotspot(s)" for an image sequence. E.g, a hotspot that changes
+              its position based on the current frame of the image sequence. The
+              computed values are nothing more than plain parent relative with
+              children absolute positioning in percentage (%). The position
+              array is mapped based on the sequence of the images.
+            </Typography>
+          </ContentSection>
+          <ContentSection title="License">
+            <Link
+              href={`${process.env.REACT_APP_GITHUB_REPOSITORY_URL}/LICENSE.txt`}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              MIT
+            </Link>
+          </ContentSection>
+          <Divider />
+          <Footer />
         </Container>
-      </ThemeProvider>
+      </ColorThemeProvider>
     </main>
   );
 }
