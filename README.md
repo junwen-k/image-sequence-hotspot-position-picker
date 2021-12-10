@@ -1,6 +1,6 @@
 # Image Sequence Hotspot Position Picker
 
-[![license](https://img.shields.io/github/license/junwen-k/image-sequence-hotspot-position-picker)](https://raw.githubusercontent.com/junwen-k/image-sequence-hotspot-position-picker/main/LICENSE.txt)
+[![license](https://img.shields.io/github/license/junwen-k/image-sequence-hotspot-position-picker?style=plastic)](https://raw.githubusercontent.com/junwen-k/image-sequence-hotspot-position-picker/main/LICENSE.txt)
 
 ## About
 
