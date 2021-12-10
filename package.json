@@ -1,10 +1,12 @@
 {
-  "name": "image-hotspot-position-picker",
+  "name": "image-sequence-hotspot-position-picker",
   "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.7.0",
     "@emotion/styled": "^11.6.0",
+    "@fontsource/nunito-sans": "^4.5.1",
     "@mui/icons-material": "^5.2.0",
     "@mui/material": "^5.2.2",
     "@mui/styles": "^5.2.2",
