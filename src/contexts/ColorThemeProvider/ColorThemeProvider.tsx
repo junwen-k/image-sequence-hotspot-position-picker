@@ -33,6 +33,10 @@ export const getDesignTokens = (mode: PaletteMode) => ({
       : {
           primary: { main: '#5090d3' },
           secondary: { main: '#ce93d8' },
+          background: {
+            default: '#001e3c',
+            paper: '#0a1929',
+          },
         }),
   },
   typography: {

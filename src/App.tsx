@@ -78,7 +78,14 @@ type Positions = Record<string, Position>;
 const AppBar = () => {
   const { mode, toggleColorMode } = useColorModeContext();
   return (
-    <MuiAppBar>
+    <MuiAppBar
+      sx={{
+        backgroundColor: (theme) =>
+          mode === 'dark'
+            ? theme.palette.background.default
+            : theme.palette.primary.main,
+      }}
+    >
       <Toolbar sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="subtitle1">
           Image Sequence Hotspot Position Picker
@@ -145,6 +152,7 @@ const PositionTable = ({
           : {
               borderLeft: (theme) => `1px solid ${theme.palette.divider}`,
             }),
+        background: (theme) => theme.palette.background.paper,
         height: '100%',
         maxHeight: !isTabletBelow ? 750 : undefined,
       }}
@@ -152,20 +160,30 @@ const PositionTable = ({
       <Table stickyHeader size="small">
         <TableHead>
           <TableRow>
-            <TableCell>
+            <TableCell
+              sx={{ background: (theme) => theme.palette.background.paper }}
+            >
               <Tooltip title="JSON">
                 <IconButton onClick={onCodeOpen}>
                   <CodeIcon />
                 </IconButton>
               </Tooltip>
             </TableCell>
-            <TableCell align="right">
+            <TableCell
+              sx={{ background: (theme) => theme.palette.background.paper }}
+              align="right"
+            >
               <InputLabel>Left (%)</InputLabel>
             </TableCell>
-            <TableCell align="right">
+            <TableCell
+              sx={{ background: (theme) => theme.palette.background.paper }}
+              align="right"
+            >
               <InputLabel>Top (%)</InputLabel>
             </TableCell>
-            <TableCell>
+            <TableCell
+              sx={{ background: (theme) => theme.palette.background.paper }}
+            >
               <Tooltip title="Delete All">
                 <IconButton onClick={onDeleteAll}>
                   <DeleteIcon />
