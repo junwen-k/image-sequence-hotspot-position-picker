@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.js": "/image-sequence-hotspot-position-picker/static/js/main.831d2257.chunk.js",
-    "main.js.map": "/image-sequence-hotspot-position-picker/static/js/main.831d2257.chunk.js.map",
+    "main.js": "/image-sequence-hotspot-position-picker/static/js/main.9bbbf481.chunk.js",
+    "main.js.map": "/image-sequence-hotspot-position-picker/static/js/main.9bbbf481.chunk.js.map",
     "runtime-main.js": "/image-sequence-hotspot-position-picker/static/js/runtime-main.4aec89f7.js",
     "runtime-main.js.map": "/image-sequence-hotspot-position-picker/static/js/runtime-main.4aec89f7.js.map",
     "static/css/2.468f6012.chunk.css": "/image-sequence-hotspot-position-picker/static/css/2.468f6012.chunk.css",
@@ -18,6 +18,6 @@
     "static/js/runtime-main.4aec89f7.js",
     "static/css/2.468f6012.chunk.css",
     "static/js/2.67bae84f.chunk.js",
-    "static/js/main.831d2257.chunk.js"
+    "static/js/main.9bbbf481.chunk.js"
   ]
 }
