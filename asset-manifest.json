@@ -1,23 +1,23 @@
 {
   "files": {
-    "main.js": "/image-sequence-hotspot-position-picker/static/js/main.9bbbf481.chunk.js",
-    "main.js.map": "/image-sequence-hotspot-position-picker/static/js/main.9bbbf481.chunk.js.map",
-    "runtime-main.js": "/image-sequence-hotspot-position-picker/static/js/runtime-main.4aec89f7.js",
-    "runtime-main.js.map": "/image-sequence-hotspot-position-picker/static/js/runtime-main.4aec89f7.js.map",
+    "main.js": "/image-sequence-hotspot-position-picker/static/js/main.2e4f19a6.chunk.js",
+    "main.js.map": "/image-sequence-hotspot-position-picker/static/js/main.2e4f19a6.chunk.js.map",
+    "runtime-main.js": "/image-sequence-hotspot-position-picker/static/js/runtime-main.3ff710c7.js",
+    "runtime-main.js.map": "/image-sequence-hotspot-position-picker/static/js/runtime-main.3ff710c7.js.map",
     "static/css/2.468f6012.chunk.css": "/image-sequence-hotspot-position-picker/static/css/2.468f6012.chunk.css",
-    "static/js/2.67bae84f.chunk.js": "/image-sequence-hotspot-position-picker/static/js/2.67bae84f.chunk.js",
-    "static/js/2.67bae84f.chunk.js.map": "/image-sequence-hotspot-position-picker/static/js/2.67bae84f.chunk.js.map",
-    "static/js/3.72555504.chunk.js": "/image-sequence-hotspot-position-picker/static/js/3.72555504.chunk.js",
-    "static/js/3.72555504.chunk.js.map": "/image-sequence-hotspot-position-picker/static/js/3.72555504.chunk.js.map",
+    "static/js/2.8cffd336.chunk.js": "/image-sequence-hotspot-position-picker/static/js/2.8cffd336.chunk.js",
+    "static/js/2.8cffd336.chunk.js.map": "/image-sequence-hotspot-position-picker/static/js/2.8cffd336.chunk.js.map",
+    "static/js/3.83ffae18.chunk.js": "/image-sequence-hotspot-position-picker/static/js/3.83ffae18.chunk.js",
+    "static/js/3.83ffae18.chunk.js.map": "/image-sequence-hotspot-position-picker/static/js/3.83ffae18.chunk.js.map",
     "index.html": "/image-sequence-hotspot-position-picker/index.html",
     "static/css/2.468f6012.chunk.css.map": "/image-sequence-hotspot-position-picker/static/css/2.468f6012.chunk.css.map",
-    "static/js/2.67bae84f.chunk.js.LICENSE.txt": "/image-sequence-hotspot-position-picker/static/js/2.67bae84f.chunk.js.LICENSE.txt",
+    "static/js/2.8cffd336.chunk.js.LICENSE.txt": "/image-sequence-hotspot-position-picker/static/js/2.8cffd336.chunk.js.LICENSE.txt",
     "static/media/index.css": "/image-sequence-hotspot-position-picker/static/media/nunito-sans-vietnamese-400-normal.a6463973.woff2"
   },
   "entrypoints": [
-    "static/js/runtime-main.4aec89f7.js",
+    "static/js/runtime-main.3ff710c7.js",
     "static/css/2.468f6012.chunk.css",
-    "static/js/2.67bae84f.chunk.js",
-    "static/js/main.9bbbf481.chunk.js"
+    "static/js/2.8cffd336.chunk.js",
+    "static/js/main.2e4f19a6.chunk.js"
   ]
 }
