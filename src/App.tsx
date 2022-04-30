@@ -4,6 +4,7 @@ import Highlight, { defaultProps } from 'prism-react-renderer';
 import React, { useCallback, useState } from 'react';
 import { useBeforeunload } from 'react-beforeunload';
 import { useDropzone } from 'react-dropzone';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
@@ -15,6 +16,7 @@ import {
   Code as CodeIcon,
   Delete as DeleteIcon,
   GitHub as GitHubIcon,
+  HighlightOff as HighlightOffIcon,
   ImageOutlined as ImageOutlinedIcon,
 } from '@mui/icons-material';
 import {
@@ -87,9 +89,7 @@ const AppBar = () => {
       }}
     >
       <Toolbar sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="subtitle1">
-          Image Sequence Hotspot Position Picker
-        </Typography>
+        <Typography variant="subtitle1">Position Picker</Typography>
         <Stack spacing={1} direction="row">
           <Tooltip title={`Turn ${mode === 'light' ? 'off' : 'on'} the light`}>
             <IconButton color="inherit" onClick={toggleColorMode}>
@@ -117,12 +117,17 @@ interface PositionTableProps {
   positions: Positions;
   onCodeOpen: IconButtonProps['onClick'];
   onDeleteAll: IconButtonProps['onClick'];
+  onClearAll: IconButtonProps['onClick'];
   onSwitchChange: SwitchProps['onChange'];
   onInputChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     imageID: string
   ) => void;
   onDelete: (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    imageID: string
+  ) => void;
+  onClear: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
     imageID: string
   ) => void;
@@ -133,9 +138,11 @@ const PositionTable = ({
   positions,
   onCodeOpen,
   onDeleteAll,
+  onClearAll,
   onSwitchChange,
   onInputChange,
   onDelete,
+  onClear,
 }: PositionTableProps) => {
   const isTabletBelow = useMediaQuery((theme: Theme) =>
     theme.breakpoints.down('md')
@@ -180,6 +187,18 @@ const PositionTable = ({
               align="right"
             >
               <InputLabel>Top (%)</InputLabel>
+            </TableCell>
+            <TableCell
+              sx={{
+                background: (theme) => theme.palette.background.paper,
+                width: (theme) => theme.spacing(1),
+              }}
+            >
+              <Tooltip title="Clear All">
+                <IconButton onClick={onClearAll}>
+                  <HighlightOffIcon />
+                </IconButton>
+              </Tooltip>
             </TableCell>
             <TableCell
               sx={{ background: (theme) => theme.palette.background.paper }}
@@ -233,6 +252,13 @@ const PositionTable = ({
                   onChange={(e) => onInputChange(e, imageID)}
                   value={position.top ?? 0}
                 />
+              </TableCell>
+              <TableCell>
+                <Tooltip title="Clear">
+                  <IconButton onClick={(e) => onClear(e, imageID)}>
+                    <HighlightOffIcon />
+                  </IconButton>
+                </Tooltip>
               </TableCell>
               <TableCell>
                 <Tooltip title="Delete">
@@ -495,7 +521,10 @@ function App() {
     const top = +((y / rect.height) * 100).toFixed(2);
     setPositions((prevPositions) => ({
       ...prevPositions,
-      [image.id]: { left, top },
+      [image.id]: {
+        left: e.button === 2 ? 0 : left,
+        top: e.button === 2 ? 0 : top,
+      },
     }));
   };
 
@@ -530,6 +559,9 @@ function App() {
     }
   };
 
+  useHotkeys('ctrl+left', handlePreviousImage, [activeImageID, images]);
+  useHotkeys('ctrl+right', handleNextImage, [activeImageID, images]);
+
   const handleDeleteImage = (imageID: string) => {
     if (imageID === activeImageID) {
       setActiveImageID(undefined);
@@ -552,51 +584,63 @@ function App() {
   const isPositionSet = (imageID: string) =>
     positions[imageID] && positions[imageID].left && positions[imageID].top;
 
-  const renderCodeDialog = () => (
-    <Dialog
-      scroll="paper"
-      fullWidth
-      onClose={() => updateOpen('codeDialog', false)}
-      open={open.codeDialog}
-    >
-      <DialogTitle>JSON</DialogTitle>
-      <DialogContent sx={{ p: 0 }}>
-        <Highlight
-          {...defaultProps}
-          code={JSON.stringify(Object.values(positions), null, 2)}
-          language="json"
-        >
-          {({ className, style, tokens, getLineProps, getTokenProps }) => (
-            <CodeDialogPre className={className} style={style}>
-              {tokens.map((line, i) => (
-                <div {...getLineProps({ line, key: i })}>
-                  {line.map((token, key) => (
-                    <span {...getTokenProps({ token, key })} />
-                  ))}
-                </div>
-              ))}
-            </CodeDialogPre>
-          )}
-        </Highlight>
-      </DialogContent>
-      <DialogActions>
-        <Button
-          onClick={() => {
-            window.navigator.clipboard.writeText(
-              JSON.stringify(Object.values(positions), null, 2)
-            );
-            updateOpen('copySnackbar', true);
-          }}
-          color="primary"
-        >
-          Copy
-        </Button>
-        <Button onClick={() => updateOpen('codeDialog', false)} color="primary">
-          Close
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
+  const renderCodeDialog = () => {
+    const code = `[\n${Object.values(positions)
+      .map(
+        (position) =>
+          `  { "left": ${position.left || 0}, "top": ${position.top || 0} },`
+      )
+      .join('\n')}\n]`;
+    return (
+      <Dialog
+        scroll="paper"
+        fullWidth
+        onClose={() => updateOpen('codeDialog', false)}
+        open={open.codeDialog}
+      >
+        <DialogTitle>JSON</DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <Highlight {...defaultProps} code={code} language="json">
+            {({ className, style, tokens, getLineProps, getTokenProps }) => (
+              <CodeDialogPre className={className} style={style}>
+                {tokens.map((line, i) => (
+                  <div {...getLineProps({ line, key: i })}>
+                    {line.map((token, key) => (
+                      <span {...getTokenProps({ token, key })} />
+                    ))}
+                  </div>
+                ))}
+              </CodeDialogPre>
+            )}
+          </Highlight>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              window.navigator.clipboard.writeText(code);
+              updateOpen('copySnackbar', true);
+            }}
+            color="primary"
+          >
+            Copy
+          </Button>
+          <Button
+            onClick={() => updateOpen('codeDialog', false)}
+            color="primary"
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
+  const handleResetPosition = (imageID: string) => {
+    setPositions((prevPositions) => ({
+      ...prevPositions,
+      [imageID]: { left: 0, top: 0 },
+    }));
+  };
 
   const renderImageCanvas = (image: Image) => (
     <>
@@ -604,6 +648,11 @@ function App() {
         <ImageCanvasPreviewImg
           alt={image.file.name}
           onMouseDown={(e) => handlePlotHotspot(e, image)}
+          onContextMenu={(e) => {
+            handleResetPosition(image.id);
+            e.preventDefault();
+            return false;
+          }}
           src={image.imgSrc}
         />
         {isPositionSet(image.id) && (
@@ -699,9 +748,21 @@ function App() {
                     positions={positions}
                     onCodeOpen={() => updateOpen('codeDialog', true)}
                     onDeleteAll={() => updateOpen('deleteDialog', true)}
+                    onClearAll={() =>
+                      setPositions((prevPositions) =>
+                        Object.keys(prevPositions).reduce(
+                          (res, key) => ({
+                            ...res,
+                            [key]: { left: 0, top: 0 },
+                          }),
+                          {}
+                        )
+                      )
+                    }
                     onSwitchChange={(e) => setActiveImageID(e.target.value)}
                     onInputChange={handleInputChange}
                     onDelete={(e, imageID) => handleDeleteImage(imageID)}
+                    onClear={(e, imageID) => handleResetPosition(imageID)}
                   />
                 </Grid>
               </Grid>
