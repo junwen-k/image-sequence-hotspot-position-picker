@@ -1,4 +1,5 @@
 import '@fontsource/nunito-sans';
+import '@fontsource/space-mono';
 
 import Highlight, { defaultProps } from 'prism-react-renderer';
 import React, { useCallback, useState } from 'react';
@@ -369,6 +370,15 @@ const EmptyImageCanvasRoot = styled('div')(({ theme }) => ({
   justifyContent: 'center',
 }));
 
+const StyledKeyboard = styled('kbd')(({ theme }) => ({
+  fontFamily: 'Space Mono',
+  padding: theme.spacing(0.75),
+  background: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
+  borderRadius: theme.shape.borderRadius,
+  boxShadow: theme.shadows[1],
+}));
+
 const EmptyImageCanvas = () => (
   <EmptyImageCanvasRoot>
     <Box textAlign="center">
@@ -559,8 +569,8 @@ function App() {
     }
   };
 
-  useHotkeys('ctrl+left', handlePreviousImage, [activeImageID, images]);
-  useHotkeys('ctrl+right', handleNextImage, [activeImageID, images]);
+  useHotkeys('meta + left', handlePreviousImage, [activeImageID, images]);
+  useHotkeys('meta + right', handleNextImage, [activeImageID, images]);
 
   const handleDeleteImage = (imageID: string) => {
     if (imageID === activeImageID) {
@@ -768,6 +778,16 @@ function App() {
               </Grid>
             )}
           </Paper>
+          <ContentSection title="Hotkeys">
+            <Stack mt={2} spacing={4}>
+              <Typography variant="caption">
+                <StyledKeyboard>Ctrl</StyledKeyboard> / <StyledKeyboard>⌘</StyledKeyboard> + <StyledKeyboard>Left</StyledKeyboard>
+              </Typography>
+              <Typography variant="caption">
+                <StyledKeyboard>Ctrl</StyledKeyboard> / <StyledKeyboard>⌘</StyledKeyboard> + <StyledKeyboard>Right</StyledKeyboard>
+              </Typography>
+            </Stack>
+          </ContentSection>
           <ContentSection title="About">
             <Typography variant="subtitle1">
               This little tool is built to ease the process of marking
